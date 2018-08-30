@@ -10,9 +10,9 @@ BACKGROUND = (36, 46, 61)
 TEXT_COLOR = (255, 255, 255)
 MARGIN_PX = 15
 
-header_fnt = ImageFont.truetype('~/Library/Fonts/OpenSans-Regular.ttf', 27)
-from_fnt = ImageFont.truetype('~/Library/Fonts/OpenSans-SemiBold.ttf', 26)
-content_fnt = ImageFont.truetype('~/Library/Fonts/OpenSans-Regular.ttf', 44)
+header_fnt = ImageFont.truetype('OpenSans-Regular.ttf', 27)
+from_fnt = ImageFont.truetype('OpenSans-SemiBold.ttf', 26)
+content_fnt = ImageFont.truetype('OpenSans-Regular.ttf', 44)
 
 def are_same_image(im1, im2):
     if None in (im1, im2):
