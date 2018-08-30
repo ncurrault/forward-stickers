@@ -1,3 +1,8 @@
+import telegram
+from telegram.ext import Updater, MessageHandler, Filters
+from telegram.error import TelegramError
+import logging
+
 from PIL import Image, ImageDraw, ImageFont, ImageChops
 import copy
 
@@ -66,3 +71,26 @@ def get_forward_image(from_name, content):
         return img.crop((0, 0, 512, bottommost_text + MARGIN_PX))
     else:
         return img
+
+
+with open("API_key.txt", "r") as f:
+    API_KEY = f.read().rstrip()
+
+def message_handler(bot, update):
+    msg = update.message
+
+    print(dir(msg))
+
+if __name__ == "__main__":
+    updater = Updater(token=API_KEY)
+    dispatcher = updater.dispatcher
+
+    dispatcher.add_handler(MessageHandler(Filters.text & Filters.forwarded, message_handler))
+
+    # allows viewing of exceptions
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        level=logging.INFO) # not sure exactly how this works
+
+    updater.start_polling()
+    updater.idle()
