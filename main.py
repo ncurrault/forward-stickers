@@ -2,9 +2,9 @@ import telegram
 from telegram.ext import Updater, MessageHandler, Filters
 from telegram.error import TelegramError
 import logging
-
 from PIL import Image, ImageDraw, ImageFont, ImageChops
 import copy
+import hashlib
 
 BACKGROUND = (36, 46, 61)
 TEXT_COLOR = (255, 255, 255)
@@ -79,7 +79,21 @@ with open("API_key.txt", "r") as f:
 def message_handler(bot, update):
     msg = update.message
 
-    print(dir(msg))
+    if msg.forward_from.first_name is None:
+        display_name = last_name
+    elif msg.forward_from.last_name is None:
+        display_name = msg.forward_from.first_name
+    else:
+        display_name = msg.forward_from.first_name + " " + msg.forward_from.last_name
+
+    fname = hashlib.md5((display_name + msg.text).encode('utf-8')).hexdigest() + ".png"
+    # TODO check if file exists
+
+    get_forward_image(display_name, msg.text).save(fname)
+
+    with open(fname, "rb") as f:
+        bot.send_document(chat_id=msg.chat.id, document=f)
+        #bot.send_photo(chat_id=update.message.chat.id, photo=f)
 
 if __name__ == "__main__":
     updater = Updater(token=API_KEY)
