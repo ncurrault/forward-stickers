@@ -5,6 +5,7 @@ import logging
 from PIL import Image, ImageDraw, ImageFont, ImageChops
 import copy
 import hashlib
+import os
 
 BACKGROUND = (36, 46, 61)
 TEXT_COLOR = (255, 255, 255)
@@ -87,9 +88,9 @@ def message_handler(bot, update):
         display_name = msg.forward_from.first_name + " " + msg.forward_from.last_name
 
     fname = hashlib.md5((display_name + msg.text).encode('utf-8')).hexdigest() + ".png"
-    # TODO check if file exists
 
-    get_forward_image(display_name, msg.text).save(fname)
+    if not os.path.exsits(fname):
+        get_forward_image(display_name, msg.text).save(fname)
 
     with open(fname, "rb") as f:
         bot.send_document(chat_id=msg.chat.id, document=f)
