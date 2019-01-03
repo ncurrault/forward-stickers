@@ -73,7 +73,8 @@ def get_forward_image(from_name, content):
     else:
         return img
 
-
+with open("sticker_set_info.txt","r") as f:
+    PACK_OWNER, PACK_NAME = f.read().splitlines()
 with open("API_key.txt", "r") as f:
     API_KEY = f.read().rstrip()
 
@@ -93,8 +94,7 @@ def message_handler(bot, update):
         get_forward_image(display_name, msg.text).save(fname)
 
     with open(fname, "rb") as f:
-        # TODO obfuscate owner's Telegram user id, pack name
-        bot.add_sticker_to_set(creator_user_id, pack_name, f, "🅱️")
+        bot.add_sticker_to_set(PACK_OWNER, PACK_NAME, f, "🅱️")
 
 if __name__ == "__main__":
     updater = Updater(token=API_KEY)
