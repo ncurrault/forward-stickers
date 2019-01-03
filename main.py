@@ -93,8 +93,8 @@ def message_handler(bot, update):
         get_forward_image(display_name, msg.text).save(fname)
 
     with open(fname, "rb") as f:
-        bot.send_document(chat_id=msg.chat.id, document=f)
-        #bot.send_photo(chat_id=update.message.chat.id, photo=f)
+        # TODO obfuscate owner's Telegram user id, pack name
+        bot.add_sticker_to_set(creator_user_id, pack_name, f, "🅱️")
 
 if __name__ == "__main__":
     updater = Updater(token=API_KEY)
