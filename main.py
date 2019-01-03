@@ -90,11 +90,22 @@ def message_handler(bot, update):
 
     fname = hashlib.md5((display_name + msg.text).encode('utf-8')).hexdigest() + ".png"
 
-    if not os.path.exsits(fname):
+    if os.path.exists(fname):
+        bot.send_message(chat_id=update.message.chat.id,
+            text="Error: sticker already in pack")
+    else:
         get_forward_image(display_name, msg.text).save(fname)
 
-    with open(fname, "rb") as f:
-        bot.add_sticker_to_set(PACK_OWNER, PACK_NAME, f, "🅱️")
+        with open(fname, "rb") as f:
+            bot.add_sticker_to_set(PACK_OWNER, PACK_NAME, f, "🅱️")
+            bot.send_message(chat_id=update.message.chat.id,
+                text="Successfully created sticker! It may take a while to appear " + \
+                "in [the pack](https://t.me/addstickers/{}), but here's a preview:".format(PACK_NAME),
+                #"(which you can save as PNG to add to another pack):"
+                parse_mode=telegram.ParseMode.MARKDOWN)
+            f.seek(0)
+            bot.send_photo(chat_id=update.message.chat.id, photo=f)
+
 
 if __name__ == "__main__":
     updater = Updater(token=API_KEY)
