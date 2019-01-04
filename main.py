@@ -13,7 +13,7 @@ MARGIN_PX = 15
 
 header_fnt = ImageFont.truetype('OpenSans-Regular.ttf', 27)
 from_fnt = ImageFont.truetype('OpenSans-SemiBold.ttf', 26)
-content_fnt = ImageFont.truetype('OpenSans-Regular.ttf', 44)
+content_fnt = ImageFont.truetype('OpenSansEmoji.ttf', 44)
 
 def are_same_image(im1, im2):
     if None in (im1, im2):
