@@ -48,6 +48,7 @@ def attempt_pop_from_forward_queue(bot, update, user_data):
             with open(fname, "rb") as f:
                 bot.send_photo(chat_id=update.message.from_user.id, photo=f, caption="sticker preview")
                 user_data["state"] = UserState.AWAITING_EMOJI
+                bot.send_message(chat_id=update.message.from_user.id, text="Send the emoji you want for this sticker, or /cancel to quit at any time")
         except Unauthorized as e:
             return update.message.reply_text("Error sending DM! Message @{} to finish creating this forward".format(bot.username))
 
@@ -70,6 +71,9 @@ def message_handler(bot, update, user_data):
     if user_data["state"] == UserState.AWAITING_EMOJI:
         user_data["pending_emoji"] = update.message.text
         user_data["state"] = UserState.AWAITING_PACK
+        bot.send_message(chat_id=update.message.from_user.id,
+            text="Send the name of the pack you want to add this forward to, " + \
+            "or \"/newpack [pack name] [pack title]\" to make a new pack")
 
     elif user_data["state"] == UserState.AWAITING_PACK:
         fname = user_data["forward_queue"][0]
@@ -82,11 +86,20 @@ def message_handler(bot, update, user_data):
         with open(fname, "rb") as f:
             bot.add_sticker_to_set(TODO_OWNER, pack_name, f, user_data["pending_emoji"])
             user_data["forward_queue"].pop(0)
+            bot.send_message(chat_id=update.message.from_user.id,
+                text="Successfully created sticker! " + \
+                "It may take some time to appear in [the pack](https://t.me/addstickers/{})".format(pack_name),
+                parse_mode=telegram.ParseMode.MARKDOWN)
 
 
 def cancel_handler(bot, update, user_data):
     if user_data.get("forward_queue", [])
         user_data["forward_queue"].pop(0)
+
+    user_data["state"] = UserState.AWAITING_FORWARD
+    bot.send_message(chat_id=update.message.from_user.id, text="Cancelled current operation without creating a sticker")
+
+    attempt_pop_from_forward_queue(bot, update, user_data)
 
 if __name__ == "__main__":
     updater = Updater(token=API_KEY)
