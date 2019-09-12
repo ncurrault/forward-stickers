@@ -24,7 +24,8 @@ def generate_forward(msg):
 
     if not os.path.exists(fname):
         sticker_generation.get_forward_image(display_name, msg.text).save(fname)
-        return fname
+
+    return fname
 
 def attempt_pop_from_forward_queue(bot, update, user_data):
     if len( user_data.get("forward_queue", []) ) == 0:
@@ -33,9 +34,8 @@ def attempt_pop_from_forward_queue(bot, update, user_data):
         fname = user_data["forward_queue"][0]
 
         try:
-            bot.send_message(chat_id=update.message.from_user.id, supress_errors=False)
             with open(fname, "rb") as f:
-                bot.send_message(chat_id=update.message.from_user.id, photo=f, text="Sticker preview")
+                bot.send_photo(chat_id=update.message.from_user.id, photo=f, caption="sticker preview")
         except Unauthorized as e:
             return update.message.reply_text("Error sending DM! Message @{} to finish creating this forward".format(bot.username))
 
