@@ -1,19 +1,18 @@
 import telegram
-from telegram.ext import Updater, MessageHandler, Filters
-from telegram.error import TelegramError
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.error import TelegramError, Unauthorized
 import logging
 import hashlib
 import os
 import sticker_generation
 
-with open("sticker_set_info.txt","r") as f:
-    PACK_OWNER, PACK_NAME = f.read().splitlines()
 with open("API_key.txt", "r") as f:
     API_KEY = f.read().rstrip()
 
-def message_handler(bot, update):
-    msg = update.message
+def get_fname(display_name, message_body):
+    return hashlib.md5((display_name + message_body).encode('utf-8')).hexdigest() + ".png"
 
+def generate_forward(msg):
     if msg.forward_from.first_name is None:
         display_name = last_name
     elif msg.forward_from.last_name is None:
@@ -21,33 +20,46 @@ def message_handler(bot, update):
     else:
         display_name = msg.forward_from.first_name + " " + msg.forward_from.last_name
 
-    fname = hashlib.md5((display_name + msg.text).encode('utf-8')).hexdigest() + ".png"
+    fname = get_fname(display_name, msg.text)
 
-    # TODO better way to check for duplicates
-
-    if os.path.exists(fname):
-        bot.send_message(chat_id=update.message.chat.id,
-            text="Error: sticker already in pack")
-    else:
+    if not os.path.exists(fname):
         sticker_generation.get_forward_image(display_name, msg.text).save(fname)
+        return fname
 
-        with open(fname, "rb") as f:
-            bot.add_sticker_to_set(PACK_OWNER, PACK_NAME, f, "🅱️")
-            bot.send_message(chat_id=update.message.chat.id,
-                text="Successfully created sticker! It may take a while to appear " + \
-                "in [the pack](https://t.me/addstickers/{}), but here's a preview:".format(PACK_NAME),
-                #"(which you can save as PNG to add to another pack):"
-                parse_mode=telegram.ParseMode.MARKDOWN)
-            f.seek(0)
-            bot.send_photo(chat_id=update.message.chat.id, photo=f)
-            os.remove(fname)
+def attempt_pop_from_forward_queue(bot, update, user_data):
+    if len( user_data.get("forward_queue", []) ) == 0:
+        update.message.reply_text("Error: forward queue is empty")
+    else:
+        fname = user_data["forward_queue"][0]
 
+        try:
+            bot.send_message(chat_id=update.message.from_user.id, supress_errors=False)
+            with open(fname, "rb") as f:
+                bot.send_message(chat_id=update.message.from_user.id, photo=f, text="Sticker preview")
+        except Unauthorized as e:
+            return update.message.reply_text("Error sending DM! Message @{} to finish creating this forward".format(bot.username))
+
+start_handler = attempt_pop_from_forward_queue
+
+def forward_handler(bot, update, user_data):
+    if "forward_queue" not in user_data.keys():
+        user_data["forward_queue"] = []
+
+    user_data["forward_queue"].append(generate_forward(update.message))
+
+    attempt_pop_from_forward_queue(bot, update, user_data)
+
+def message_handler(bot, update, user_data):
+    pass
 
 if __name__ == "__main__":
     updater = Updater(token=API_KEY)
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(MessageHandler(Filters.text & Filters.forwarded, message_handler))
+    dispatcher.add_handler(CommandHandler("start", start_handler, pass_user_data=True))
+
+    dispatcher.add_handler(MessageHandler(Filters.text & Filters.forwarded, forward_handler, pass_user_data=True))
+    dispatcher.add_handler(MessageHandler(Filters.text & (~ Filters.forwarded), message_handler, pass_user_data=True))
 
     # allows viewing of exceptions
     logging.basicConfig(
