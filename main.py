@@ -155,6 +155,7 @@ def newpack_handler(bot, update, user_data, args):
             pack_title, f, user_data["pending_emoji"] )
 
     sticker_set_owners[pack_name] = from_user_id
+    update_pickles()
 
     done_with_forward(user_data)
 
