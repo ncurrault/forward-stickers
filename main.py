@@ -147,10 +147,11 @@ def newpack_handler(bot, update, user_data, args):
 
     from_user_id = update.message.from_user.id
     fname = user_data["forward_queue"][0]
+    full_pack_name = add_botname(pack_name, bot)
 
-    with open(fname, "r") as f:
+    with open(fname, "rb") as f:
         bot.create_new_sticker_set(from_user_id,
-            add_botname(pack_name, bot),
+            full_pack_name,
             pack_title, f, user_data["pending_emoji"] )
 
     sticker_set_owners[pack_name] = from_user_id
@@ -159,17 +160,17 @@ def newpack_handler(bot, update, user_data, args):
 
     bot.send_message(chat_id=update.message.from_user.id,
         text="Successfully created new pack with sticker! " + \
-        "It may take some time to appear in [the pack](https://t.me/addstickers/{})".format(pack_name),
+        "It may take some time to appear in [the pack](https://t.me/addstickers/{})".format(full_pack_name),
         parse_mode=telegram.ParseMode.MARKDOWN)
 
     attempt_pop_from_forward_queue(bot, update, user_data)
 
 
 def pack_list_handler(bot, update):
-    packs = [ bot.get_sticker_set(add_botname(name, bot)) for name in sticker_set_owners.keys() ]
-    packs.sort(key=lambda pack: pack.title)
+    names = sorted(sticker_set_owners.keys())
+    packs = [ bot.get_sticker_set(add_botname(name, bot)) for name in names ]
 
-    msg = "\n".join( "[{}](https://t.me/addstickers/{})".format(pack.title, pack.name) for pack in packs )
+    msg = "\n\n".join( "`{}` ({}) ([link](https://t.me/addstickers/{}))".format(names[i], pack.title, pack.name) for i, pack in enumerate(packs) )
     update.message.reply_text(text=msg, parse_mode=telegram.ParseMode.MARKDOWN)
 
 if __name__ == "__main__":
@@ -177,6 +178,7 @@ if __name__ == "__main__":
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler("start", start_handler, pass_user_data=True))
+    dispatcher.add_handler(CommandHandler("cancel", cancel_handler, pass_user_data=True))
     dispatcher.add_handler(CommandHandler("newpack", newpack_handler, pass_user_data=True, pass_args=True))
     dispatcher.add_handler(CommandHandler("listpacks", pack_list_handler))
 
