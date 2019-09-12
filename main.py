@@ -14,6 +14,9 @@ STICKER_INFO_FILE = "sticker_info.p"
 with open("API_key.txt", "r") as f:
     API_KEY = f.read().rstrip()
 
+def add_botname(name, bot):
+    return name + "_by_" + bot.username
+
 def get_fname(display_name, message_body):
     return hashlib.md5((display_name + message_body).encode('utf-8')).hexdigest() + ".png"
 
@@ -102,11 +105,11 @@ def message_handler(bot, update, user_data):
 
         if pack_name not in sticker_set_owners.keys():
             bot.send_message(chat_id=update.message.from_user.id,
-                text="Error: no pack found with given name."
+                text="Error: no pack found with given name.")
             return
 
         pack_owner = sticker_set_owners[pack_name]
-        pack_name += "_by_" + bot.username
+        pack_name = add_botname(pack_name, bot)
 
         with open(fname, "rb") as f:
             bot.add_sticker_to_set(pack_owner, pack_name, f, user_data["pending_emoji"])
@@ -138,7 +141,7 @@ def newpack_handler(bot, update, user_data, args):
     pack_name = args[0]
     pack_title = " ".join(args[1:])
 
-    if pack_name in pack_owners.keys():
+    if pack_name in sticker_set_owners.keys():
         update.message.reply_text(text="Pack with that name already exists!")
         return
 
@@ -147,10 +150,10 @@ def newpack_handler(bot, update, user_data, args):
 
     with open(fname, "r") as f:
         bot.create_new_sticker_set(from_user_id,
-            pack_name + "_by_" + bot.username,
+            add_botname(pack_name, bot),
             pack_title, f, user_data["pending_emoji"] )
 
-    pack_owners[pack_name] = from_user_id
+    sticker_set_owners[pack_name] = from_user_id
 
     done_with_forward(user_data)
 
@@ -162,13 +165,12 @@ def newpack_handler(bot, update, user_data, args):
     attempt_pop_from_forward_queue(bot, update, user_data)
 
 
-
 def pack_list_handler(bot, update):
-    packs = [ bot.get_sticker_set(name) for name in sticker_set_owners.keys() ]
+    packs = [ bot.get_sticker_set(add_botname(name, bot)) for name in sticker_set_owners.keys() ]
     packs.sort(key=lambda pack: pack.title)
 
     msg = "\n".join( "[{}](https://t.me/addstickers/{})".format(pack.title, pack.name) for pack in packs )
-    bot.update.message.reply_text(text=msg)
+    update.message.reply_text(text=msg, parse_mode=telegram.ParseMode.MARKDOWN)
 
 if __name__ == "__main__":
     updater = Updater(token=API_KEY)
