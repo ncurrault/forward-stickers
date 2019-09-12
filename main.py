@@ -189,7 +189,7 @@ if __name__ == "__main__":
     # allows viewing of exceptions
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level=logging.INFO) # not sure exactly how this works
+        level=logging.INFO)
 
     updater.start_polling()
     updater.idle()
