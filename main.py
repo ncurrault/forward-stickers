@@ -39,9 +39,7 @@ def attempt_pop_from_forward_queue(bot, update, user_data):
     else:
         user_data["state"] = UserState.AWAITING_FORWARD
 
-    if len( user_data.get("forward_queue", []) ) == 0:
-        update.message.reply_text("Error: forward queue is empty")
-    else:
+    if len( user_data.get("forward_queue", []) ) > 0:
         fname = user_data["forward_queue"][0]
 
         try:
@@ -65,8 +63,6 @@ def forward_handler(bot, update, user_data):
 def message_handler(bot, update, user_data):
     if "state" not in user_data:
         return
-    if not update.message.chat.id != update.from_user.id:
-        return # not a DM, should be ignored
 
     if user_data["state"] == UserState.AWAITING_EMOJI:
         user_data["pending_emoji"] = update.message.text
@@ -85,15 +81,21 @@ def message_handler(bot, update, user_data):
 
         with open(fname, "rb") as f:
             bot.add_sticker_to_set(TODO_OWNER, pack_name, f, user_data["pending_emoji"])
-            user_data["forward_queue"].pop(0)
-            bot.send_message(chat_id=update.message.from_user.id,
-                text="Successfully created sticker! " + \
-                "It may take some time to appear in [the pack](https://t.me/addstickers/{})".format(pack_name),
-                parse_mode=telegram.ParseMode.MARKDOWN)
+
+        user_data["forward_queue"].pop(0)
+        os.remove(fname)
+
+        bot.send_message(chat_id=update.message.from_user.id,
+            text="Successfully created sticker! " + \
+            "It may take some time to appear in [the pack](https://t.me/addstickers/{})".format(pack_name),
+            parse_mode=telegram.ParseMode.MARKDOWN)
+
+        user_data["state"] = UserState.AWAITING_FORWARD
+        attempt_pop_from_forward_queue(bot, update, user_data)
 
 
 def cancel_handler(bot, update, user_data):
-    if user_data.get("forward_queue", [])
+    if user_data.get("forward_queue", []):
         user_data["forward_queue"].pop(0)
 
     user_data["state"] = UserState.AWAITING_FORWARD
