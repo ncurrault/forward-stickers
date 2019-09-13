@@ -9,7 +9,6 @@ import pickle
 import sticker_generation
 
 PACK_OWNER_FILE = "pack_owners.p"
-STICKER_INFO_FILE = "sticker_info.p"
 
 with open("API_key.txt", "r") as f:
     API_KEY = f.read().rstrip()
@@ -37,14 +36,10 @@ def generate_forward(msg):
 
 with open(PACK_OWNER_FILE, "rb") as f:
     sticker_set_owners = pickle.load(f)
-with open(STICKER_INFO_FILE, "rb") as f:
-    sticker_forwards = pickle.load(f) # TODO use to create sticker-to-forward system
 
-def update_pickles():
+def update_pack_owner_file():
     with open(PACK_OWNER_FILE, "wb") as f:
         pickle.dump(sticker_set_owners, f)
-    with open(STICKER_INFO_FILE, "wb") as f:
-        pickle.dump(sticker_forwards, f)
 
 class UserState(Enum):
     AWAITING_FORWARD = 1
@@ -155,7 +150,7 @@ def newpack_handler(bot, update, user_data, args):
             pack_title, f, user_data["pending_emoji"] )
 
     sticker_set_owners[pack_name] = from_user_id
-    update_pickles()
+    update_pack_owner_file()
 
     done_with_forward(user_data)
 
